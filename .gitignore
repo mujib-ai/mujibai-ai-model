@@ -1,0 +1,27 @@
+# Python artifacts
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Virtualenv
+.venv/
+venv/
+env/
+
+# Local env / secrets
+.env
+*.pem
+*.key
+
+# Editor/OS files
+.vscode/
+.idea/
+.DS_Store
+
+# Large model/data files
+*.ckpt
+*.pt
+*.onnx
+weights/
+data/

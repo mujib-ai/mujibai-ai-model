@@ -1,0 +1,7 @@
+Features to be added yet:
+# Single shared model instance per process.
+# In production, scale via multiple workers or model server.
+
+# Scalability on resource limits.
+# - payload size limits
+# - idle timeouts

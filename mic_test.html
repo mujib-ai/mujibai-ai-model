@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<body>
+<h3>Realtime STT Test</h3>
+<button onclick="start()">Start</button>
+<pre id="output"></pre>
+
+<script>
+let ws;
+
+async function start() {
+  ws = new WebSocket("ws://localhost:8000/ws/transcribe");
+  ws.onmessage = e => {
+    const data = JSON.parse(e.data);
+    if (data.partial) {
+      document.getElementById("output").textContent += data.partial + "\n";
+    }
+  };
+
+  const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+  const audioCtx = new AudioContext({ sampleRate: 16000 });
+  const source = audioCtx.createMediaStreamSource(stream);
+
+  const processor = audioCtx.createScriptProcessor(4096, 1, 1);
+  source.connect(processor);
+  processor.connect(audioCtx.destination);
+
+  processor.onaudioprocess = e => {
+    const samples = e.inputBuffer.getChannelData(0);
+    const pcm16 = new Int16Array(samples.length);
+    for (let i = 0; i < samples.length; i++) {
+      pcm16[i] = samples[i] * 32767;
+    }
+    ws.send(pcm16.buffer);
+  };
+}
+</script>
+</body>
+</html>
