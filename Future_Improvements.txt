@@ -5,3 +5,8 @@ Features to be added yet:
 # Scalability on resource limits.
 # - payload size limits
 # - idle timeouts
+
+# is_final flag once the sentece is complete.
+
+# Security:
+Authentication

@@ -13,7 +13,7 @@ def stream_wav(file_path):
     ws = websocket.WebSocket()
     ws.connect(WS_URL)
     ws.settimeout(0.2)   # 🔑 IMPORTANT
-    print("✅ Connected")
+    print("Connected")
 
     with wave.open(file_path, "rb") as wf:
         print("🎧 Audio info:")
@@ -41,7 +41,7 @@ def stream_wav(file_path):
                 pass
 
     ws.close()
-    print("🔌 Connection closed")
+    print("Connection closed")
 
 if __name__ == "__main__":
     stream_wav("test.wav")
