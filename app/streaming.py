@@ -10,32 +10,53 @@ setup_logging()
 class RealtimeWhisperSession:
     def __init__(self, model):
         self.model = model
-        self.buffer = np.zeros(0, dtype=np.float32)
-        self.window_size = 16000 * 3     # 3 seconds window TODO: make configurable
 
-    def add_audio(self, samples):
-        self.buffer = np.concatenate([self.buffer, samples])
-        # keep last N seconds only
-        if len(self.buffer) > self.window_size:
-            self.buffer = self.buffer[-self.window_size:]
+        # Buffer for real-time partials (short, sliding)
+        self.rolling_buffer = np.zeros(0, dtype=np.float32)
 
-    def transcribe_partial(self):
+        # Buffer for final transcription (entire audio)
+        self.full_buffer = np.zeros(0, dtype=np.float32)
+
+        # 3 seconds rolling window
+        self.window_size = 16000 * 3
+
+    def add_audio(self, samples: np.ndarray):
+        # Keep everything for final transcription
+        self.full_buffer = np.concatenate([self.full_buffer, samples])
+
+        # Keep only recent audio for partials
+        self.rolling_buffer = np.concatenate([self.rolling_buffer, samples])
+        if len(self.rolling_buffer) > self.window_size:
+            self.rolling_buffer = self.rolling_buffer[-self.window_size:]
+
+    def transcribe_partial(self) -> str:
         """
-        Transcribe last 2–3 seconds.
-        Avoids long delays & gives real-time partials.
+        Fast, low-latency partial transcription.
         """
-        if len(self.buffer) < 16000:  # less than 1 sec
-            logger.warning("Insufficient audio for transcription")
+        if len(self.rolling_buffer) < 16000:
             return ""
 
-        # Run whisper in non-blocking way on recent chunk
-        # **NOTE: This call is synchronous and will block the event loop.
-        # TODO: Move transcription to a thread pool / worker for production.
         segments, _ = self.model.transcribe(
-            self.buffer,
+            self.rolling_buffer,
             language="ar",
             beam_size=1,
             vad_filter=True
         )
-        text = " ".join(s.text for s in segments)
-        return text.strip()
+
+        return " ".join(s.text for s in segments).strip()
+
+    def transcribe_final(self) -> str:
+        """
+        One clean final transcription pass on the full audio.
+        """
+        if len(self.full_buffer) < 16000:
+            return ""
+
+        segments, _ = self.model.transcribe(
+            self.full_buffer,
+            language="ar",
+            beam_size=3,
+            vad_filter=True
+        )
+
+        return " ".join(s.text for s in segments).strip()

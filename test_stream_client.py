@@ -23,8 +23,25 @@ def stream_wav(file_path):
         while True:
             frames = wf.readframes(CHUNK_SIZE)
             if not frames:
-                print("🏁 End of audio")
+                print("End of audio")
+                ws.send_text(json.dumps({"event": "end"}))
+                while True:
+                    try:
+                        response = ws.recv()
+                        data = json.loads(response)
+
+                        # if "partial" in data:
+                        #     print("📝 Partial:", data["partial"])
+
+                        if "final" in data:
+                            print("📝 Final:", data["final"])
+                            break
+
+                    except websocket._exceptions.WebSocketTimeoutException:
+                        # Server still processing final transcription
+                        continue
                 break
+                
 
             ws.send_binary(frames)
             print("➡ Sent chunk")
